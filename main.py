@@ -1,13 +1,4 @@
 #!/usr/bin/env python3
-"""
-Enhanced Telegram bot to download Instagram reels with:
-- Join channel requirement
-- User-friendly UI with clear instructions
-- Top quality reel downloads with captions
-- Progress indicators
-- High load handling messages
-- Background web server to keep alive on Render
-"""
 
 import os
 import re
@@ -28,11 +19,12 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # --- Configuration ---
-BOT_TOKEN = "7828233355:AAEgdjNtWLrTe41f0Mi5w_lmzXdLZWtamTo"
-BOT_USERNAME = "@Zhfjsbot"
-CHANNEL_USERNAME = "@instadownloadbkt"
-CHANNEL_LINK = "https://t.me/instadownloadbkt"
+BOT_TOKEN = "8168398057:AAHK582qoR6QkWVu_gC0mWPE-1tFgNBnmHw"
+BOT_USERNAME = "@InstaReelsDownloadroBot"
+CHANNEL_USERNAME = "@botXmaker"
+CHANNEL_LINK = "https://t.me/botXmaker"
 DONATION = "Bhavesh_dev"
+ADMIN_ID = 1908670857  # Your Telegram user ID
 
 # Regex to extract Instagram reel shortcode from URL
 REEL_REGEX = re.compile(
@@ -43,7 +35,10 @@ REEL_REGEX = re.compile(
 active_downloads = 0
 MAX_CONCURRENT_DOWNLOADS = 3
 
-# Flask web server to fake alive for Render
+# Track users
+user_ids = set()
+
+# Flask web server to keep alive (for Render etc)
 app = Flask(__name__)
 
 @app.route('/')
@@ -109,6 +104,9 @@ Send me a Reel link now to get started!
         parse_mode='Markdown',
         reply_markup=keyboard
     )
+
+    # Save user ID
+    user_ids.add(update.effective_user.id)
 
 def send_typing_action(chat_id, context):
     context.bot.send_chat_action(chat_id=chat_id, action='typing')
@@ -276,11 +274,38 @@ def button_callback(update: Update, context: CallbackContext) -> None:
     else:
         query.answer()
 
+def users_command(update: Update, context: CallbackContext) -> None:
+    if update.effective_user.id != ADMIN_ID:
+        update.message.reply_text("❌ You are not authorized to use this command.")
+        return
+    update.message.reply_text(f"👥 Total users: {len(user_ids)}")
+
+def broadcast_command(update: Update, context: CallbackContext) -> None:
+    if update.effective_user.id != ADMIN_ID:
+        update.message.reply_text("❌ You are not authorized to use this command.")
+        return
+    
+    message_text = ' '.join(context.args)
+    if not message_text:
+        update.message.reply_text("⚠️ Usage: /broadcast Your message here")
+        return
+    
+    sent_count = 0
+    for user_id in list(user_ids):
+        try:
+            context.bot.send_message(chat_id=user_id, text=message_text)
+            sent_count += 1
+        except Exception as e:
+            logger.error(f"Failed to send broadcast to {user_id}: {e}")
+    update.message.reply_text(f"✅ Broadcast sent to {sent_count} users.")
+
 def run_bot():
     updater = Updater(BOT_TOKEN, use_context=True)
     dispatcher = updater.dispatcher
 
     dispatcher.add_handler(CommandHandler("start", start))
+    dispatcher.add_handler(CommandHandler("users", users_command))
+    dispatcher.add_handler(CommandHandler("broadcast", broadcast_command))
     dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, download_reel))
     dispatcher.add_handler(CallbackQueryHandler(button_callback))
 
