@@ -19,7 +19,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # --- Configuration ---
-BOT_TOKEN = "8168398057:AAHK582qoR6QkWVu_gC0mWPE-1tFgNBnmHw"
+BOT_TOKEN = "8168398057:AAHKWVu_gC0mWPE-1tFgNBnmHw"
 BOT_USERNAME = "@InstaReelsDownloadroBot"
 CHANNEL_USERNAME = "@botXmaker"
 CHANNEL_LINK = "https://t.me/botXmaker"
